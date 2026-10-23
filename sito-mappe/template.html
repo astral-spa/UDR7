@@ -706,12 +706,19 @@ button, input, select { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .app { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; padding-inline: var(--gutter); padding-block: 16px; max-width: 1600px; margin: 0 auto; }
-header.top { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; border-bottom: 3px solid var(--ink); padding-bottom: 10px; }
+header.top { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 12px 24px; border-bottom: 3px solid var(--ink); padding-bottom: 10px; }
+header.top .logo { align-self: center; justify-self: center; display: block; }
+header.top .logo img { display: block; height: 64px; width: auto; }
+header.top .controls { justify-self: end; flex-direction: column; align-items: flex-end; gap: 6px; }
+header.top .controls .riga { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: flex-end; }
+.ia { font-size: .7rem; color: var(--muted); letter-spacing: .04em; }
 header.top h1 { font: 700 2.1rem/1 var(--f-display); letter-spacing: .01em; margin: 0; text-transform: uppercase; text-wrap: balance; }
 header.top h1 small { display: block; font: 500 1rem/1.2 var(--f-body); text-transform: none; color: var(--muted); letter-spacing: 0; margin-top: 4px; }
 .controls { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
 .controls label { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); display: flex; gap: 8px; align-items: center; }
 .controls input[type=date] { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); padding: 5px 8px; text-transform: none; letter-spacing: 0; color: var(--ink); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) header.top .logo { background: #fff; border-radius: 6px; padding: 4px 8px; } }
+:root[data-theme="dark"] header.top .logo { background: #fff; border-radius: 6px; padding: 4px 8px; }
 .daytag { font: 600 .95rem var(--f-display); text-transform: uppercase; letter-spacing: .05em; background: var(--ink); color: var(--bg); padding: 3px 9px; border-radius: 3px; }
 
 aside.index { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
@@ -851,6 +858,11 @@ details.zone .dd small { color: var(--muted); margin-left: auto; font-variant-nu
   .lines { max-height: 260px; }
   #map { height: 360px; }
   header.top h1 { font-size: 1.7rem; }
+  header.top { grid-template-columns: minmax(0, 1fr); }
+  header.top .logo { grid-row: 1; }
+  header.top .logo img { height: 48px; }
+  header.top .controls { justify-self: start; align-items: flex-start; }
+  header.top .controls .riga { justify-content: flex-start; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
@@ -860,9 +872,13 @@ details.zone .dd small { color: var(--muted); margin-left: auto; font-variant-nu
 <div class="app">
   <header class="top">
     <h1 id="titolo">/*TITOLO*/<small id="sottotitolo"></small></h1>
+    <div class="logo"><img src="/*LOGO*/" alt="Astral Infomobilità"></div>
     <div class="controls">
-      <label for="giorno">Giorno <input type="date" id="giorno"></label>
-      <span class="daytag" id="daytag"></span>
+      <span class="ia">generato con IA</span>
+      <div class="riga">
+        <label for="giorno">Giorno <input type="date" id="giorno"></label>
+        <span class="daytag" id="daytag"></span>
+      </div>
     </div>
   </header>
 

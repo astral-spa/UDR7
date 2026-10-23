@@ -33,6 +33,8 @@ direzione è dato dai capolinea d'arrivo delle corse, perché i `trip_headsign` 
 ## File
 
 - `template.html`: grafica e funzioni del sito, con i segnaposto per i dati.
+- `logo.png`: logo Astral Infomobilità al centro della testata (incluso nella pagina; per cambiarlo basta
+  sostituire il file).
 - `build_data.py`: legge il GTFS e scrive il sito completo in `sito-mappe/index.html` (pubblicato online) e
   `index.html` nella radice del repo.
 
