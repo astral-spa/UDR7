@@ -1675,5 +1675,23 @@ $("#giorno").addEventListener("change", e => {
   apply(location.hash.replace(/^#linea-/, ""));
 })();
 </script>
+<!-- statistiche visite (GoatCounter, senza cookie); conta anche le linee aperte (#linea-…) -->
+<script>
+if (location.protocol.startsWith("http")) {
+  let ultimo = location.pathname + location.hash;
+  const conta = () => {
+    const path = location.pathname + location.hash;
+    if (path === ultimo || !(window.goatcounter && window.goatcounter.count)) return;
+    ultimo = path;
+    window.goatcounter.count({ path, title: document.title });
+  };
+  // il sito cambia linea con history.pushState (nessun evento hashchange)
+  const push = history.pushState;
+  history.pushState = function () { push.apply(this, arguments); conta(); };
+  addEventListener("hashchange", conta);
+  addEventListener("popstate", conta);
+}
+</script>
+<script data-goatcounter="https://andreaantonini.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </body>
 </html>
