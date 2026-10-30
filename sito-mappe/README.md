@@ -42,7 +42,7 @@ Online (GitHub Pages) viene pubblicato **solo** `index.html`: script, modello, R
 repository e non sono raggiungibili dall'indirizzo del sito. La pagina non mostra il nome del file GTFS.
 
 Le visite sono contate con **GoatCounter** (account `andreaantonini`, https://andreaantonini.goatcounter.com):
-pagina e linee aperte (`#linea-…`), senza cookie. Lo script è in fondo a `template.html`.
+una sola voce per tutto il sito (le linee aperte, `#linea-…`, non sono contate a parte), senza cookie. Lo script è in fondo a `template.html`.
 
 ## Aggiornare con un nuovo GTFS
 
