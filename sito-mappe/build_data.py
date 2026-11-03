@@ -29,6 +29,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, ".."))
 TITOLO = "Rete bus UdR 7"
 
+# proxy del tempo reale (Cloudflare Worker, codice nel repository UDR11, cartella proxy-realtime): ritardi delle
+# corse di oggi, abbinate col trip_id del GTFS. Nel Worker AGENCY_ID deve comprendere UdR7AutoserviziTroiani.
+# Vuoto = sito con i soli orari programmati.
+REALTIME = "https://udr-realtime.antonini1971.workers.dev"
+
 # calendari imposti (al posto di calendar.txt; le date di calendar_dates.txt sono ignorate)
 # service_id -> etichetta, giorni della settimana (0 = lunedì), validità; la domenica non ci sono corse
 CALENDARI = {
@@ -475,7 +480,10 @@ def make_tab(svc, d, ts, st_by_trip, names, stop_idx, route_lines):
         o = [None] * len(rows)
         for key, r in zip(k, st_by_trip[t["trip_id"]]):
             o[pos[key]] = minutes(r["departure_time"] or r["arrival_time"])
-        corse.append({"id": t.get("trip_short_name") or t["trip_id"], "shape": t["shape_id"], "o": o})
+        corsa = {"id": t.get("trip_short_name") or t["trip_id"], "shape": t["shape_id"], "o": o}
+        if corsa["id"] != t["trip_id"]:
+            corsa["tid"] = t["trip_id"]  # trip_id del GTFS, per abbinare i dati in tempo reale
+        corse.append(corsa)
 
     # fermate principali (il GTFS non le indica: timepoint è sempre 1)
     princ = [0] * len(rows)
@@ -518,7 +526,8 @@ def main():
     blob = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     with open(os.path.join(HERE, "logo.png"), "rb") as f:  # logo incluso nella pagina: online va solo index.html
         logo = "data:image/png;base64," + base64.b64encode(f.read()).decode()
-    for old, new in (("/*DATI*/null", blob), ("/*TITOLO*/", TITOLO), ("/*LOGO*/", logo)):
+    for old, new in (("/*DATI*/null", blob), ("/*TITOLO*/", TITOLO), ("/*LOGO*/", logo),
+                     ('/*REALTIME*/""', json.dumps(REALTIME))):
         if old not in html:
             raise SystemExit(f"Segnaposto {old} non trovato in template.html")
         html = html.replace(old, new)

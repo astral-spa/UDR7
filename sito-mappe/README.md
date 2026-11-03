@@ -18,6 +18,16 @@ Sito con mappa interattiva e quadri orari della rete, generato dal GTFS. È un u
   senso di marcia, capolinea P/A, varianti di percorso evidenziabili, filtro per zone, schermo intero, stampa.
 - **Quadro orario** per calendario e direzione, con fermate principali o tutte; clic su una corsa per vederla
   sulla mappa, clic su una fermata per le sue partenze del giorno.
+- **Titolo cliccabile**: «Rete bus UdR 7» riporta alla mappa iniziale con tutte le linee (resta il giorno scelto).
+- **Tempo reale** (solo per il giorno di oggi, sul sito online): ogni 30 secondi, e solo con la pagina in primo piano,
+  il sito legge dal proxy (`REALTIME` in testa a `build_data.py`; codice del proxy nel repository UDR11, cartella
+  `proxy-realtime/`) stato, ritardo e prossima fermata delle corse, abbinate con il `trip_id` del GTFS. Nel quadro
+  orario sotto il numero delle corse in viaggio compare il ritardo (+) o l'anticipo (−) in minuti e la cella della
+  prossima fermata è evidenziata in verde; nel riquadro di una fermata, in cima, i bus «In arrivo» (compresi gli
+  arrivi al capolinea) con l'orario previsto. **Bus in viaggio** si accende da solo all'arrivo dei dati (se non è
+  stato spento): le corse con dati reali hanno il bordo verde e stanno fra la fermata precedente e la prossima
+  indicata dalle API. Se il proxy non risponde restano gli orari programmati. Nel proxy (Cloudflare) la variabile
+  `AGENCY_ID` deve comprendere `UdR7AutoserviziTroiani`.
 - **Vicino a me** e **Bus in viaggio** (posizioni stimate dagli orari programmati, non in tempo reale).
 - Orari sempre nel formato **hh:mm**: gli orari del GTFS con i secondi (es. 06:54:30) sono troncati al minuto.
 
