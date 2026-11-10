@@ -526,6 +526,9 @@ def main():
     blob = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
     with open(os.path.join(HERE, "logo.png"), "rb") as f:  # logo incluso nella pagina: online va solo index.html
         logo = "data:image/png;base64," + base64.b64encode(f.read()).decode()
+    with open(os.path.join(HERE, "icona.png"), "rb") as f:  # icona della scheda e della schermata Home (180×180)
+        icona = "data:image/png;base64," + base64.b64encode(f.read()).decode()
+    html = html.replace("/*ICONA*/", icona)
     for old, new in (("/*DATI*/null", blob), ("/*TITOLO*/", TITOLO), ("/*LOGO*/", logo),
                      ('/*REALTIME*/""', json.dumps(REALTIME))):
         if old not in html:
