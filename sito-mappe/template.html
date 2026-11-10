@@ -1854,7 +1854,8 @@ $("#giorno").addEventListener("change", e => {
 </script>
 <!-- statistiche visite (GoatCounter, senza cookie): un solo percorso per tutto il sito, così le visite
      non si dividono tra le linee aperte (#linea-…), i parametri dell'indirizzo o "/index.html" -->
-<script>window.goatcounter = { path: () => location.pathname.replace(/index\.html$/, "") };</script>
+<!-- percorso fisso: con il dominio proprio (udr7.astralspa.it) le visite restano su "/UDR7/" come prima -->
+<script>window.goatcounter = { path: () => "/UDR7/" };</script>
 <script data-goatcounter="https://andreaantonini.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </body>
 </html>
