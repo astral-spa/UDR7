@@ -1538,6 +1538,7 @@ let tRange = [24 * 60, 0];
 LINEE.forEach(l => l.tab.forEach(t => t.corse.forEach(c => c.o.forEach(v => { if (v != null) { tRange[0] = Math.min(tRange[0], v); tRange[1] = Math.max(tRange[1], v); } }))));
 tRange = [Math.floor(tRange[0] / 30) * 30, Math.ceil(tRange[1] / 30) * 30];
 $("#vehMin").min = tRange[0]; $("#vehMin").max = tRange[1];
+const ICONA_BUS = '<svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M3 1.5h10a1.5 1.5 0 0 1 1.5 1.5v9a1 1 0 0 1-1 1H13v1.25a.75.75 0 0 1-1.5 0V13h-7v1.25a.75.75 0 0 1-1.5 0V13h-.5a1 1 0 0 1-1-1V3A1.5 1.5 0 0 1 3 1.5Zm.5 2v4h9v-4h-9ZM4.75 9.25a1 1 0 1 0 0 2 1 1 0 0 0 0-2Zm6.5 0a1 1 0 1 0 0 2 1 1 0 0 0 0-2Z"/></svg>';
 function updateVehicles() {
   if (!veh.on) return;
   const m = veh.min, live = veh.live && rtLive();
@@ -1557,9 +1558,11 @@ function updateVehicles() {
         if (inv) nLive++;
         let mk = veh.markers.get(c.id);
         if (!mk) {
-          const w = Math.max(26, 10 + 8 * l.n.length);
+          // numeri corti sul mezzo; nomi lunghi ("Montegiove Campus") come icona del bus nel colore della linea,
+          // che non copre la mappa (il nome resta nel riquadro al passaggio del mouse)
+          const corto = l.n.length <= 4, w = corto ? Math.max(26, 10 + 8 * l.n.length) : 26;
           mk = L.marker(b.ll, { keyboard: false, zIndexOffset: 500, icon: L.divIcon({ className: "bus-ico", iconSize: [w, 20], iconAnchor: [w / 2, 10],
-            html: `<span style="background:${l.col};color:${textOn(l.col)}">${esc(l.n)}</span>` }) });
+            html: `<span style="background:${l.col};color:${textOn(l.col)}">${corto ? esc(l.n) : ICONA_BUS}</span>` }) });
           mk.bindTooltip("", { direction: "top", offset: [0, -10] });
           mk.on("click", () => {
             state.svc = t.svc; state.dir = t.dir;
