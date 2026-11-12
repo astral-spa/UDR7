@@ -1558,11 +1558,10 @@ function updateVehicles() {
         if (inv) nLive++;
         let mk = veh.markers.get(c.id);
         if (!mk) {
-          // numeri corti sul mezzo; nomi lunghi ("Montegiove Campus") come icona del bus nel colore della linea,
-          // che non copre la mappa (il nome resta nel riquadro al passaggio del mouse)
-          const corto = l.n.length <= 4, w = corto ? Math.max(26, 10 + 8 * l.n.length) : 26;
-          mk = L.marker(b.ll, { keyboard: false, zIndexOffset: 500, icon: L.divIcon({ className: "bus-ico", iconSize: [w, 20], iconAnchor: [w / 2, 10],
-            html: `<span style="background:${l.col};color:${textOn(l.col)}">${corto ? esc(l.n) : ICONA_BUS}</span>` }) });
+          // ogni mezzo è un'icona del bus nel colore della linea, tutte della stessa misura: si individuano a colpo
+          // d'occhio e non coprono la mappa; linea e direzione sono nel riquadro al passaggio del mouse
+          mk = L.marker(b.ll, { keyboard: false, zIndexOffset: 500, icon: L.divIcon({ className: "bus-ico", iconSize: [26, 20], iconAnchor: [13, 10],
+            html: `<span style="background:${l.col};color:${textOn(l.col)}">${ICONA_BUS}</span>` }) });
           mk.bindTooltip("", { direction: "top", offset: [0, -10] });
           mk.on("click", () => {
             state.svc = t.svc; state.dir = t.dir;
