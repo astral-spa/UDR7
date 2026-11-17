@@ -19,6 +19,10 @@ Sito con mappa interattiva e quadri orari della rete, generato dal GTFS. È un u
 - **Quadro orario** per calendario e direzione, con fermate principali o tutte; clic su una corsa per vederla
   sulla mappa, clic su una fermata per le sue partenze del giorno.
 - **Titolo cliccabile**: «Rete bus UdR 7» riporta alla mappa iniziale con tutte le linee (resta il giorno scelto).
+- **Corse preferite**: cliccando il numero di una corsa nel quadro orario compare «☆ Aggiungi ai preferiti»; le corse
+  salvate sono in cima all'elenco («★ Le mie corse»), con il tempo reale se sono in viaggio, e si aprono con un clic.
+  Restano nel browser di chi usa il sito (nessun account, non passano da un dispositivo all'altro); con un GTFS nuovo
+  che rinumera le corse si ritrovano per linea, direzione e orario di partenza.
 - **Tempo reale** (solo per il giorno di oggi, sul sito online): ogni 30 secondi, e solo con la pagina in primo piano,
   il sito legge dal proxy (`REALTIME` in testa a `build_data.py`; codice del proxy nel repository UDR11, cartella
   `proxy-realtime/`) stato, ritardo e prossima fermata delle corse, abbinate con il `trip_id` del GTFS. Nel quadro

@@ -844,6 +844,10 @@ footer a { color: var(--accent); }
 .btn:hover { border-color: var(--accent); color: var(--accent); }
 .btn[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .btn:disabled { opacity: .45; cursor: default; color: inherit; border-color: var(--rule); }
+.favbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 0 0 8px; padding: 6px 10px; background: var(--hl); border-radius: var(--radius); font-size: .88rem; }
+.btn.fav-btn[aria-pressed="true"] { background: #fff4d6; color: #8a5a00; border-color: #c88a00; font-weight: 700; }
+.fav-mark { color: #c88a00; margin-right: 1px; }
+.lines .fav .meta .rt { margin-left: 4px; }
 details.zone { position: relative; }
 details.zone > summary { list-style: none; }
 details.zone > summary::-webkit-details-marker { display: none; }
@@ -1205,6 +1209,17 @@ function renderList() {
     areas.get(l.area).push(l);
   });
   let html = "";
+  // corse preferite (solo senza ricerca): in ordine di partenza
+  const fav = q ? [] : preferiti.map(trovaPreferito).filter(Boolean).sort((a, b) => partenza(a.c) - partenza(b.c));
+  if (fav.length) {
+    html += `<li><h3>★ Le mie corse</h3></li>`;
+    fav.forEach(({ l, t, c }) => {
+      const on = activeOn(t.svc, state.day);
+      html += `<li class="fav"><button data-favline="${esc(l.id)}" data-favtrip="${esc(c.id)}"><span class="${on ? "" : "off"}">${badge(l)}</span>` +
+        `<span class="nm">${hhmm(partenza(c))} da ${esc(primaFermata(t, c))} → ${esc(t.titolo)}<span class="meta">` +
+        `${on ? esc(SVC[t.svc].label) : "non circola in questo giorno"}<span data-favrt>${favRT(c)}</span></span></span></button></li>`;
+    });
+  }
   if (stopHits.length) {
     html += `<li><h3>Fermate</h3></li>`;
     stopHits.forEach(([s, i]) => {
@@ -1225,7 +1240,10 @@ function renderList() {
 }
 $("#elenco").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
-  if (b.dataset.line) go(b.dataset.line);
+  if (b.dataset.favline) {
+    const r = trovaPreferito({ line: b.dataset.favline, id: b.dataset.favtrip });
+    if (r) apriCorsa(r.l, r.t, r.c);
+  } else if (b.dataset.line) go(b.dataset.line);
   else if (b.dataset.stop) {
     const i = +b.dataset.stop, s = STOPS[i];
     map.setView([s[3], s[4]], 16);
@@ -1263,6 +1281,39 @@ function pickDefaults(l) {
   if (!dirs.includes(state.dir)) state.dir = dirs[0];
 }
 
+/* ---------- corse preferite: salvate nel browser di chi usa il sito (nessun account) ---------- */
+const PREF_KEY = "udr7-preferiti";
+let preferiti = (() => { try { return JSON.parse(store.get(PREF_KEY) || "[]"); } catch (e) { return []; } })();
+const partenza = c => c.o.find(v => v != null);
+const primaFermata = (t, c) => STOPS[t.fermate[c.o.findIndex(v => v != null)]][1];
+// una corsa preferita si ritrova per id; con un GTFS nuovo che rinumera le corse, per linea, direzione e partenza
+function trovaPreferito(f) {
+  const l = byId[f.line]; if (!l) return null;
+  const cerca = (ok, prova) => { for (const t of l.tab) if (ok(t)) { const c = t.corse.find(prova); if (c) return { l, t, c }; } return null; };
+  return cerca(() => true, c => c.id === f.id) ||
+    (f.dep != null && (cerca(t => t.svc === f.svc && t.dir === f.dir, c => partenza(c) === f.dep) ||
+                       cerca(t => t.dir === f.dir, c => partenza(c) === f.dep))) || null;
+}
+const isPreferito = (l, c) => preferiti.some(f => f.line === l.id && f.id === c.id);
+function togglePreferito(l, t, c) {
+  if (isPreferito(l, c)) preferiti = preferiti.filter(f => !(f.line === l.id && f.id === c.id));
+  else preferiti.push({ line: l.id, svc: t.svc, dir: t.dir, id: c.id, dep: partenza(c) });
+  store.set(PREF_KEY, JSON.stringify(preferiti));
+}
+function apriCorsa(l, t, c) {
+  go(l.id);
+  state.svc = t.svc; state.dir = t.dir; state.trip = c.id;
+  renderLine(); drawTrip(c);
+}
+// tempo reale della corsa preferita: ritardo e prossima fermata, se è in viaggio
+function favRT(c) {
+  if (typeof rtOf !== "function") return "";
+  const r = rtOf(rtKey(c));
+  if (!r || r.stato !== "IN_SERVICE") return "";
+  const i = rtNextRow(c), t = LINEE.flatMap(l => l.tab).find(x => x.corse.includes(c));
+  return ` · in viaggio${rtBadge(r)}${i != null && t ? ` · prossima: ${esc(STOPS[t.fermate[i]][1])}` : ""}`;
+}
+
 function renderLine() {
   const l = byId[state.line];
   pickDefaults(l);
@@ -1275,13 +1326,14 @@ function renderLine() {
   const nextRow = t.corse.map(rtNextRow), nextRows = new Set(nextRow.filter(i => i != null));
   const rows = t.fermate.map((s, i) => ({ s, i })).filter(r => !state.onlyMain || t.princ[r.i] || nextRows.has(r.i));
   rt.firma = rtFirma(t);
+  const scelta = state.trip && t.corse.find(c => c.id === state.trip);  // corsa selezionata: si può mettere fra i preferiti
 
   const PV = percorsiOf(l), pv = Object.fromEntries(PV.map(v => [v.id, v]));
   const showLett = t.corse.some(c => pv[c.shape] && pv[c.shape].multi);
   const cls = c => [state.trip === c.id ? "sel" : "", state.variant && pv[state.variant] && pv[state.variant].dir === t.dir && c.shape !== state.variant ? "ov" : ""].join(" ").trim();
   let thead = `<tr><th class="stop">Fermata</th>` + t.corse.map((c, k) => {
     const v = pv[c.shape];
-    return `<th data-k="${k}" title="Corsa ${esc(c.id)}${v ? ` – percorso ${v.lett}` : ""} – clicca per vederla sulla mappa" class="${cls(c)}">${k + 1}${showLett && v ? `<br>${vlett(v, l.col)}` : ""}` +
+    return `<th data-k="${k}" title="Corsa ${esc(c.id)}${v ? ` – percorso ${v.lett}` : ""} – clicca per vederla sulla mappa e aggiungerla ai preferiti" class="${cls(c)}">${isPreferito(l, c) ? '<span class="fav-mark" title="Corsa preferita">★</span>' : ""}${k + 1}${showLett && v ? `<br>${vlett(v, l.col)}` : ""}` +
       (REALTIME ? `<br><span data-rt="${esc(rtKey(c))}">${rtBadge(rtOf(rtKey(c)))}</span>` : "") + `</th>`;
   }).join("") + `</tr>`;
   let tbody = rows.map(({ s, i }) => {
@@ -1321,8 +1373,10 @@ function renderLine() {
     <p class="note">${t.corse.length} corse · ${sv.scol ? "periodo scolastico, " : ""}valido dal ${itDate(sv.dal)} al ${itDate(sv.al)}.${esclusi}
       ${activeOn(state.svc, state.day) ? "" : ` <b>Questo calendario non è attivo ${esc(itLong(state.day))}.</b>`}
       Sulla mappa la direzione scelta è a tratto pieno con le frecce del senso di marcia (P = partenza, A = arrivo), l'altra è tratteggiata.
-      ${showLett ? "La lettera sotto il numero della corsa indica il percorso seguito. " : ""}Clicca un percorso per evidenziarlo, il numero di una corsa per vederla sulla mappa, o il nome di una fermata per le sue partenze.
+      ${showLett ? "La lettera sotto il numero della corsa indica il percorso seguito. " : ""}Clicca un percorso per evidenziarlo, il numero di una corsa per vederla sulla mappa o metterla fra i preferiti (★), o il nome di una fermata per le sue partenze.
       Orari in grassetto: fermate principali; «·» la corsa non passa dalla fermata.<span data-rtnote>${rtNote()}</span></p>
+    ${scelta ? `<div class="favbar"><span>Corsa delle <b>${hhmm(partenza(scelta))}</b> da ${esc(primaFermata(t, scelta))} → ${esc(t.titolo)}</span>
+      <button type="button" class="btn fav-btn" id="favBtn" aria-pressed="${isPreferito(l, scelta)}">${isPreferito(l, scelta) ? "★ Nei preferiti" : "☆ Aggiungi ai preferiti"}</button></div>` : ""}
     <div class="tt-wrap"><table class="tt"><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>`;
 
   const p = $("#pannello");
@@ -1349,6 +1403,12 @@ function renderLine() {
   });
   drawRoute();
   p.querySelector("#soloPrinc").addEventListener("change", e => { state.onlyMain = e.target.checked; store.set("udr7-soloPrinc", state.onlyMain ? "1" : "0"); renderLine(); });
+  p.querySelector("#favBtn")?.addEventListener("click", () => {
+    togglePreferito(l, t, scelta);
+    const w = p.querySelector(".tt-wrap"), sx = w.scrollLeft, sy = w.scrollTop;
+    renderLine(); renderList();
+    const w2 = document.querySelector(".tt-wrap"); w2.scrollLeft = sx; w2.scrollTop = sy;
+  });
   p.querySelector("thead").addEventListener("click", e => {
     const th = e.target.closest("th[data-k]"); if (!th) return;
     const c = t.corse[+th.dataset.k];
@@ -1680,6 +1740,10 @@ function rtRefresh() {
   }
   drawNext();
   document.querySelectorAll("[data-rt]").forEach(el => { el.innerHTML = rtBadge(rtOf(el.dataset.rt)); });
+  document.querySelectorAll("[data-favrt]").forEach(el => {
+    const b = el.closest("button"), r = b && trovaPreferito({ line: b.dataset.favline, id: b.dataset.favtrip });
+    el.innerHTML = r ? favRT(r.c) : "";
+  });
   document.querySelectorAll("[data-rtnote]").forEach(el => { el.textContent = rtNote(); });
   if (veh.on && veh.live) vehNow();
 }
