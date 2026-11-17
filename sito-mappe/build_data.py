@@ -480,9 +480,11 @@ def make_tab(svc, d, ts, st_by_trip, names, stop_idx, route_lines):
         o = [None] * len(rows)
         for key, r in zip(k, st_by_trip[t["trip_id"]]):
             o[pos[key]] = minutes(r["departure_time"] or r["arrival_time"])
-        corsa = {"id": t.get("trip_short_name") or t["trip_id"], "shape": t["shape_id"], "o": o}
-        if corsa["id"] != t["trip_id"]:
-            corsa["tid"] = t["trip_id"]  # trip_id del GTFS, per abbinare i dati in tempo reale
+        # id = trip_id del GTFS, sempre unico (in alcuni GTFS il trip_short_name è il codice del percorso, ripetuto
+        # su tante corse); il trip_short_name, se c'è, si mostra come nome della corsa
+        corsa = {"id": t["trip_id"], "shape": t["shape_id"], "o": o}
+        if t.get("trip_short_name") and t["trip_short_name"] != t["trip_id"]:
+            corsa["sn"] = t["trip_short_name"]
         corse.append(corsa)
 
     # fermate principali (il GTFS non le indica: timepoint è sempre 1)

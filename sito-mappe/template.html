@@ -1333,7 +1333,7 @@ function renderLine() {
   const cls = c => [state.trip === c.id ? "sel" : "", state.variant && pv[state.variant] && pv[state.variant].dir === t.dir && c.shape !== state.variant ? "ov" : ""].join(" ").trim();
   let thead = `<tr><th class="stop">Fermata</th>` + t.corse.map((c, k) => {
     const v = pv[c.shape];
-    return `<th data-k="${k}" title="Corsa ${esc(c.id)}${v ? ` – percorso ${v.lett}` : ""} – clicca per vederla sulla mappa e aggiungerla ai preferiti" class="${cls(c)}">${isPreferito(l, c) ? '<span class="fav-mark" title="Corsa preferita">★</span>' : ""}${k + 1}${showLett && v ? `<br>${vlett(v, l.col)}` : ""}` +
+    return `<th data-k="${k}" title="Corsa ${esc(c.sn || c.id)}${v ? ` – percorso ${v.lett}` : ""} – clicca per vederla sulla mappa e aggiungerla ai preferiti" class="${cls(c)}">${isPreferito(l, c) ? '<span class="fav-mark" title="Corsa preferita">★</span>' : ""}${k + 1}${showLett && v ? `<br>${vlett(v, l.col)}` : ""}` +
       (REALTIME ? `<br><span data-rt="${esc(rtKey(c))}">${rtBadge(rtOf(rtKey(c)))}</span>` : "") + `</th>`;
   }).join("") + `</tr>`;
   let tbody = rows.map(({ s, i }) => {
