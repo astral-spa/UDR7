@@ -1007,10 +1007,12 @@ function percorsiOf(l) {
     if (!v) {
       const sv = []; c.o.forEach((x, k) => { if (x != null) sv.push(k); });
       v = { id: c.shape, dir: t.dir, titolo: t.titolo, da: t.fermate[sv[0]], a: t.fermate[sv[sv.length - 1]], n: 0, tabs: [],
-        serv: new Set(sv.map(k => STOPS[t.fermate[k]][1])) };
+        serv: new Set(sv.map(k => STOPS[t.fermate[k]][1])), ids: new Set() };
       m.set(c.shape, v);
     }
-    v.n++; if (!v.tabs.includes(t)) v.tabs.push(t);
+    // corse distinte: la stessa corsa può stare in più calendari (calendari combinati per giorno)
+    if (!v.ids.has(c.id)) { v.ids.add(c.id); v.n++; }
+    if (!v.tabs.includes(t)) v.tabs.push(t);
   }));
   const dirs = [...new Set(l.tab.map(t => t.dir))].sort();
   const out = [];
@@ -1290,7 +1292,8 @@ const primaFermata = (t, c) => STOPS[t.fermate[c.o.findIndex(v => v != null)]][1
 function trovaPreferito(f) {
   const l = byId[f.line]; if (!l) return null;
   const cerca = (ok, prova) => { for (const t of l.tab) if (ok(t)) { const c = t.corse.find(prova); if (c) return { l, t, c }; } return null; };
-  return cerca(() => true, c => c.id === f.id) ||
+  // prima nei calendari del giorno scelto (una corsa può stare in più calendari)
+  return cerca(t => activeOn(t.svc, state.day), c => c.id === f.id) || cerca(() => true, c => c.id === f.id) ||
     (f.dep != null && (cerca(t => t.svc === f.svc && t.dir === f.dir, c => partenza(c) === f.dep) ||
                        cerca(t => t.dir === f.dir, c => partenza(c) === f.dep))) || null;
 }
