@@ -515,6 +515,22 @@ def make_tab(svc, d, ts, st_by_trip, names, stop_idx, route_lines):
     # (CAN B "CITTADUCALE" per una circolare di Cantalice, 66_1 "GAVIGNANO FS" per corse che finiscono a Stimigliano)
     ends = Counter(end_label(*names[st_by_trip[t["trip_id"]][-1]["stop_id"]]) for t in ts)
     titolo = " / ".join(e for e, _ in ends.most_common(3))
+    # colonne in ordine di passaggio: ogni corsa (in ordine di partenza) si inserisce dove crea meno orari fuori
+    # ordine con le corse già messe, su tutte le fermate in comune; così una corsa che parte a metà linea alle 14:10
+    # va prima di una che vi transita alle 14:14, anche se questa è partita prima dal capolinea
+    def dopo(x, y):  # fermate in comune in cui x passa dopo y
+        return sum(1 for a, b in zip(x["o"], y["o"]) if a is not None and b is not None and a > b)
+    ordinate = []
+    for c in corse:
+        costo = [0] * (len(ordinate) + 1)
+        for k, a in enumerate(ordinate):
+            da, dc = dopo(a, c), dopo(c, a)   # a prima di c costa da; a dopo c costa dc
+            for p in range(len(costo)):
+                costo[p] += da if k < p else dc
+        minimo = min(costo)
+        p = max(i for i, v in enumerate(costo) if v == minimo)  # a parità, l'ordine di partenza
+        ordinate.insert(p, c)
+    corse[:] = ordinate
     return {"svc": svc, "dir": d, "titolo": titolo, "fermate": [stop_idx[sid] for sid, _ in rows],
             "princ": princ, "corse": corse}
 
