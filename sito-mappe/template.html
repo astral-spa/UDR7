@@ -1327,11 +1327,18 @@ function renderLine() {
   const esclusi = sv.esclusi.length ? ` Non si effettua: ${sv.esclusi.map(itDate).join(", ")}.` : "";
   // prossima fermata di ogni corsa in viaggio (tempo reale): la riga si vede anche fra le sole fermate principali
   const nextRow = t.corse.map(rtNextRow), nextRows = new Set(nextRow.filter(i => i != null));
-  const rows = t.fermate.map((s, i) => ({ s, i })).filter(r => !state.onlyMain || t.princ[r.i] || nextRows.has(r.i));
   rt.firma = rtFirma(t);
   const scelta = state.trip && t.corse.find(c => c.id === state.trip);  // corsa selezionata: si può mettere fra i preferiti
 
   const PV = percorsiOf(l), pv = Object.fromEntries(PV.map(v => [v.id, v]));
+  // percorso selezionato in questa direzione: si vedono solo le fermate servite dalle sue corse
+  const inDir = state.variant && pv[state.variant] && pv[state.variant].dir === t.dir && t.corse.some(c => c.shape === state.variant);
+  const servite0 = inDir ? new Set(t.fermate.map((s, i) => i).filter(i => t.corse.some(c => c.shape === state.variant && c.o[i] != null))) : null;
+  const filtroPerc = !!servite0 && servite0.size < t.fermate.length;  // niente da nascondere se il percorso passa da tutte le fermate
+  const servite = filtroPerc ? servite0 : null;
+  const rows = t.fermate.map((s, i) => ({ s, i }))
+    .filter(r => !servite || servite.has(r.i))
+    .filter(r => !state.onlyMain || t.princ[r.i] || nextRows.has(r.i));
   const showLett = t.corse.some(c => pv[c.shape] && pv[c.shape].multi);
   const cls = c => [state.trip === c.id ? "sel" : "", state.variant && pv[state.variant] && pv[state.variant].dir === t.dir && c.shape !== state.variant ? "ov" : ""].join(" ").trim();
   let thead = `<tr><th class="stop">Fermata</th>` + t.corse.map((c, k) => {
@@ -1376,14 +1383,17 @@ function renderLine() {
     <p class="note">${t.corse.length} corse · ${sv.scol ? "periodo scolastico, " : ""}valido dal ${itDate(sv.dal)} al ${itDate(sv.al)}.${esclusi}
       ${activeOn(state.svc, state.day) ? "" : ` <b>Questo calendario non è attivo ${esc(itLong(state.day))}.</b>`}
       Sulla mappa la direzione scelta è a tratto pieno con le frecce del senso di marcia (P = partenza, A = arrivo), l'altra è tratteggiata.
-      ${showLett ? "La lettera sotto il numero della corsa indica il percorso seguito. " : ""}Clicca un percorso per evidenziarlo, il numero di una corsa per vederla sulla mappa o metterla fra i preferiti (★), o il nome di una fermata per le sue partenze.
+      ${showLett ? "La lettera sotto il numero della corsa indica il percorso seguito. " : ""}Clicca un percorso per evidenziarlo e vedere solo le sue fermate, il numero di una corsa per vederla sulla mappa o metterla fra i preferiti (★), o il nome di una fermata per le sue partenze.
       Orari in grassetto: fermate principali; «·» la corsa non passa dalla fermata.<span data-rtnote>${rtNote()}</span></p>
     ${scelta ? `<div class="favbar"><span>Corsa delle <b>${hhmm(partenza(scelta))}</b> da ${esc(primaFermata(t, scelta))} → ${esc(t.titolo)}</span>
       <button type="button" class="btn fav-btn" id="favBtn" aria-pressed="${isPreferito(l, scelta)}">${isPreferito(l, scelta) ? "★ Nei preferiti" : "☆ Aggiungi ai preferiti"}</button></div>` : ""}
+    ${filtroPerc ? `<p class="note perc-filtro">Percorso ${vlett(pv[state.variant], l.col)}: sono mostrate solo le sue ${servite.size} fermate${state.onlyMain ? " (qui le principali)" : ""}, le altre ${t.fermate.length - servite.size} della linea sono nascoste. <a href="#" id="tutteFermate" style="color:var(--accent)">Mostra tutte le fermate</a></p>` : ""}
     <div class="tt-wrap"><table class="tt"><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>`;
 
   const p = $("#pannello");
   p.querySelector("#tutte").addEventListener("click", e => { e.preventDefault(); go(null); });
+  const tf = p.querySelector("#tutteFermate");
+  if (tf) tf.addEventListener("click", e => { e.preventDefault(); state.variant = null; routeHover = null; renderLine(); });
   p.querySelectorAll("[data-svc]").forEach(b => b.addEventListener("click", () => { state.svc = b.dataset.svc; state.trip = null; renderLine(); drawTrip(); }));
   p.querySelectorAll("[data-dir]").forEach(b => b.addEventListener("click", () => { state.dir = b.dataset.dir; state.trip = null; state.variant = null; renderLine(); drawTrip(); }));
   p.querySelectorAll("[data-var]").forEach(b => {
