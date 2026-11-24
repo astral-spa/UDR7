@@ -1816,7 +1816,11 @@ function drawRoute(hover) {
     const pts = shapePts(v.id); if (!pts.length) return;
     const same = v.dir === curDir, isF = v.id === focus;
     const opacity = focus ? (isF ? 1 : same ? .35 : .25) : same ? 1 : .55;
-    routeLayer.addLayer(L.polyline(pts, { renderer, color: "#000", weight: isF ? 11 : same ? 8 : 5, opacity: opacity * .22, interactive: false }));
+    if (isF) {
+      // contorno del percorso scelto: bordo scuro sottile e filo bianco, per staccarlo dalla mappa e dagli altri percorsi
+      routeLayer.addLayer(L.polyline(pts, { renderer, color: "#1b1f1d", weight: 13, opacity: .9, interactive: false }));
+      routeLayer.addLayer(L.polyline(pts, { renderer, color: "#fff", weight: 10, opacity: 1, interactive: false }));
+    } else routeLayer.addLayer(L.polyline(pts, { renderer, color: "#000", weight: same ? 8 : 5, opacity: opacity * .22, interactive: false }));
     const pl = L.polyline(pts, { renderer, color: l.col, weight: isF ? 7 : same ? 5 : 3, opacity, dashArray: same ? null : "7 7" });
     pl.bindTooltip(`Linea ${esc(l.n)} · percorso ${v.lett}: da ${esc(STOPS[v.da][1])} a ${esc(STOPS[v.a][1])}`, { sticky: true });
     pl.on("click", () => { const b = document.querySelector(`#perc [data-var="${CSS.escape(v.id)}"]`); if (b) b.click(); });
