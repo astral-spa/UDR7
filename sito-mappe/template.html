@@ -821,6 +821,7 @@ table.tt td.next { background: #dff3e4 !important; box-shadow: inset 0 0 0 2px #
 :root[data-theme="dark"] table.tt td.next { background: #173a24 !important; color: #bfe8cb; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) table.tt td.next { background: #173a24 !important; color: #bfe8cb; } }
 .bus-ico.live span { box-shadow: 0 0 0 3px #1f7a3a, 0 1px 4px rgba(0,0,0,.45); }
+.targa { display: inline-block; padding: 0 .35em; border: 1px solid #1d2a44; border-radius: 3px; background: #fff; color: #1d2a44; font: 700 .85em/1.4 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .06em; }
 table.tt tbody tr:last-child td, table.tt tbody tr:last-child th { border-bottom: 0; }
 
 .summary { width: 100%; border-collapse: collapse; font-size: .88rem; font-variant-numeric: tabular-nums; }
@@ -1636,18 +1637,25 @@ function updateVehicles() {
           mk = L.marker(b.ll, { keyboard: false, zIndexOffset: 500, icon: L.divIcon({ className: "bus-ico", iconSize: [26, 20], iconAnchor: [13, 10],
             html: `<span style="background:${l.col};color:${textOn(l.col)}">${ICONA_BUS}</span>` }) });
           mk.bindTooltip("", { direction: "top", offset: [0, -10] });
+          // premendo il mezzo si apre la didascalia (con la targa, se il mezzo è in servizio col tempo reale)
+          mk.bindPopup(() => mk._testo || "", { maxWidth: 280, offset: [0, -6], autoPan: false });
+          mk.on("popupopen", () => mk.closeTooltip());  // la didascalia aperta sostituisce il riquadro al passaggio
           mk.on("click", () => {
             state.svc = t.svc; state.dir = t.dir;
             go(l.id);
             state.trip = c.id; renderLine(); drawTrip(c);
+            if (!mk.isPopupOpen()) mk.openPopup();
           });
           veh.layer.addLayer(mk); veh.markers.set(c.id, mk);
         } else mk.setLatLng(b.ll);
         mk.getElement()?.classList.toggle("live", !!inv);
         const ni = inv ? rtNextRow(c) : null;  // prossima fermata secondo il tempo reale, se nota
         const nf = ni != null ? t.fermate[ni] : b.next, na = ni != null ? c.o[ni] : b.at;
-        mk.setTooltipContent(`<b>Linea ${esc(l.n)}</b> → ${esc(t.titolo)}<br>prossima fermata: ${esc(STOPS[nf][1])} (${hhmm(Math.round(na + dm) % 1440)})` +
-          (inv ? `<br>tempo reale: ${rtTesto(r)}` : live ? "<br>posizione stimata dagli orari" : ""));
+        const testo = `<b>Linea ${esc(l.n)}</b> → ${esc(t.titolo)}<br>prossima fermata: ${esc(STOPS[nf][1])} (${hhmm(Math.round(na + dm) % 1440)})` +
+          (inv ? `<br>tempo reale: ${rtTesto(r)}` : live ? "<br>posizione stimata dagli orari" : "");
+        mk.setTooltipContent(testo);
+        mk._testo = testo + (inv && r.targa ? `<br>targa del mezzo: <b class="targa">${esc(r.targa)}</b>` : "");
+        if (mk.isPopupOpen()) mk.setPopupContent(mk._testo);
       });
     });
   });
